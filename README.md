@@ -2,7 +2,7 @@
 
 A comprehensive enterprise dashboard application that provides UiPath automation teams with centralized visibility and control over their Orchestrator environment. Built with React, TypeScript, and the official UiPath SDK.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/swati354/uipath-orchestrator-check-2)
 
 ## Overview
 
@@ -128,7 +128,7 @@ The application follows a clean architecture pattern:
 
 ### Cloudflare Pages
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/swati354/uipath-orchestrator-check-2)
 
 1. Build the application:
 ```bash
