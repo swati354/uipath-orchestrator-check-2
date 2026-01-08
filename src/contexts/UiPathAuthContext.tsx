@@ -1,80 +1,54 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { initializeUiPathSDK, getUiPath } from '@/lib/uipath';
-
+import type { UiPath } from 'uipath-sdk';
 interface UiPathAuthContextType {
   isInitializing: boolean;
   isAuthenticated: boolean;
   error: string | null;
-  reinitialize: () => Promise<void>;
+  uipath: UiPath | null;
 }
-
 const UiPathAuthContext = createContext<UiPathAuthContextType | undefined>(undefined);
-
-export function UiPathAuthProvider({ children }: { children: ReactNode }) {
+export function UiPathAuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const initialize = async () => {
-    try {
-      setIsInitializing(true);
-      setError(null);
-      
-      console.log('🔐 Auth Context: Starting SDK initialization...');
-      
-      await initializeUiPathSDK();
-      
-      const uipath = getUiPath();
-      
-      const authStatus = uipath.isAuthenticated();
-      console.log('🔐 Auth Context: Authentication status:', authStatus);
-      
-      setIsAuthenticated(authStatus);
-      
-      if (!authStatus) {
-        console.log('🔐 Auth Context: Not authenticated, checking for ongoing OAuth flow...');
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasCode = urlParams.has('code');
-        const hasError = urlParams.has('error');
-        
-        if (!hasCode && !hasError) {
-          console.log('🔐 Auth Context: No OAuth callback detected, user may need to authenticate');
-        }
-      }
-      
-    } catch (err) {
-      console.error('🔐 Auth Context: Initialization error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initialize UiPath SDK');
-      setIsAuthenticated(false);
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
+  const [uipath, setUipath] = useState<UiPath | null>(null);
   useEffect(() => {
-    initialize();
+    const initializeAuth = async () => {
+      try {
+        console.log('🔄 UiPath Auth: Starting initialization...');
+        setIsInitializing(true);
+        setError(null);
+        const uipathInstance = await initializeUiPathSDK();
+        setUipath(uipathInstance);
+        const authenticated = uipathInstance.isAuthenticated();
+        setIsAuthenticated(authenticated);
+        console.log('✅ UiPath Auth: Initialization complete', { authenticated });
+      } catch (err) {
+        console.error('❌ UiPath Auth: Initialization failed', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to initialize UiPath SDK';
+        setError(errorMessage);
+        setIsAuthenticated(false);
+        setUipath(null);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    initializeAuth();
   }, []);
-
-  const reinitialize = async () => {
-    await initialize();
+  const value: UiPathAuthContextType = {
+    isInitializing,
+    isAuthenticated,
+    error,
+    uipath,
   };
-
   return (
-    <UiPathAuthContext.Provider
-      value={{
-        isInitializing,
-        isAuthenticated,
-        error,
-        reinitialize,
-      }}
-    >
+    <UiPathAuthContext.Provider value={value}>
       {children}
     </UiPathAuthContext.Provider>
   );
 }
-
-export function useUiPathAuth() {
+export function useUiPathAuth(): UiPathAuthContextType {
   const context = useContext(UiPathAuthContext);
   if (context === undefined) {
     throw new Error('useUiPathAuth must be used within a UiPathAuthProvider');
